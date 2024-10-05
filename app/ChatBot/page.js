@@ -32,7 +32,8 @@ const AgriChatbot = () => {
     const fetchNasaData = async () => {
         if (!latitude || !longitude) return null;
         const endDate = format(new Date(), 'yyyyMMdd');
-        const startDate = format(subDays(new Date(), 30), 'yyyyMMdd');
+        // 12 days bhi chal jae ga but 10 for safe side if user prompt is big
+        const startDate = format(subDays(new Date(), 10), 'yyyyMMdd');
 
         try {
             const res = await fetch(
