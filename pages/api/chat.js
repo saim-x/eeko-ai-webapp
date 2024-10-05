@@ -17,43 +17,52 @@ export default async function handler(req, res) {
 
         try {
             let messages = req.body.messages;
-            console.log("Received messages:", messages);
+            const mode = req.body.mode;
+            console.log("Received messages:", JSON.stringify(messages, null, 2));
+            console.log("Mode:", mode);
             
             // Format messages for Groq API
             const formattedMessages = messages.map(message => {
-                if (typeof message.content === 'object' && message.content.image) {
+                if (message.role === 'user' && message.content && typeof message.content === 'object' && message.content.image) {
+                    // Handle base64 encoded image
+                    const base64Image = message.content.image.replace(/^data:image\/\w+;base64,/, '');
                     return {
                         role: "user",
                         content: [
                             { type: "text", text: "Analyze this agricultural image:" },
-                            { type: "image_url", url: message.content.image }
+                            { type: "image_url", image_url: { url: `data:image/jpeg;base64,${base64Image}` } }
                         ]
                     };
                 } else {
                     return {
                         role: message.role,
-                        content: typeof message.content === 'string' ? message.content : ""
+                        content: typeof message.content === 'string' ? message.content : JSON.stringify(message.content)
                     };
                 }
             });
             
-
             console.log("Formatted messages:", JSON.stringify(formattedMessages, null, 2)); // Debug log
 
             const chatCompletion = await groq.chat.completions.create({
                 messages: formattedMessages,
                 model: "llama-3.2-11b-vision-preview",
                 temperature: 0.5,
-                max_tokens: 1024,
+                max_tokens: 8192,
                 top_p: 1,
                 stream: false,
                 stop: null
             });
 
-            res.status(200).json({ content: chatCompletion.choices[0].message.content });
+            // Ensure the response is always a string
+            const responseContent = chatCompletion.choices[0]?.message?.content || '';
+            return res.status(200).json({ 
+                role: 'assistant', 
+                content: typeof responseContent === 'string' ? responseContent : JSON.stringify(responseContent)
+            });
+
         } catch (error) {
-            console.error("Error calling Groq API:", error);
-            res.status(500).json({ error: "An error occurred while processing your request." });
+            console.error("Error in chat API:", error);
+            return res.status(500).json({ error: "An error occurred while processing your request." });
         }
     } else {
         res.setHeader('Allow', ['POST']);

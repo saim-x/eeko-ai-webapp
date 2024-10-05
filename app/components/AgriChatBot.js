@@ -61,6 +61,7 @@ const AgriChatbot = ({ latitude, longitude, nasaData }) => {
                 },
                 body: JSON.stringify({
                     messages: [...messages, userMessage],
+                    mode: mode,
                 }),
             });
 
@@ -184,6 +185,19 @@ const AgriChatbot = ({ latitude, longitude, nasaData }) => {
         "Climate change adaptation"
     ];
 
+    const renderMessageContent = (content) => {
+        if (typeof content === 'string') {
+            return <ReactMarkdown>{content}</ReactMarkdown>;
+        } else if (content && typeof content === 'object') {
+            if (content.image) {
+                return <img src={content.image} alt="User uploaded" className="max-w-full h-auto" />;
+            } else if (content.text) {
+                return <ReactMarkdown>{content.text}</ReactMarkdown>;
+            }
+        }
+        return <p>Unsupported message content</p>;
+    };
+
     return (
         <div className="bg-gray-800 rounded-lg p-2 sm:p-4 w-full h-full flex flex-col">
             <h2 className="text-lg sm:text-xl font-bold mb-2 sm:mb-4 text-gray-100">Agricultural Assistant</h2>
@@ -197,15 +211,10 @@ const AgriChatbot = ({ latitude, longitude, nasaData }) => {
                         className={`mb-2 ${message.role === 'user' ? 'text-right' : 'text-left'}`}
                     >
                         <span className={`inline-block p-1 sm:p-2 text-sm sm:text-base rounded-lg ${message.role === 'user' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-100'}`}>
-                            <ReactMarkdown>{message.content}</ReactMarkdown>
+                            {renderMessageContent(message.content)}
                         </span>
                     </motion.div>
                 ))}
-                {isLoading && (
-                    <div className="text-center">
-                        <FaRobot className="animate-spin inline-block text-gray-400" />
-                    </div>
-                )}
                 <div ref={chatEndRef} />
             </div>
             <div className="mb-2 flex justify-center space-x-2">
