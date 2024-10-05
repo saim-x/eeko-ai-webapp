@@ -3,13 +3,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { FaPaperPlane, FaCamera, FaUpload, FaRobot } from 'react-icons/fa';
 import ReactMarkdown from 'react-markdown';
-import Header from '../components/Header'; // Assuming you have a Header component
+import Header from '../components/Header';
 
-const InsectDetector = ({ latitude, longitude, nasaData }) => {
+const InsectDetector = () => {
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const [locationInfo, setLocationInfo] = useState(null);
     const chatEndRef = useRef(null);
     const [mode, setMode] = useState('text');
     const [image, setImage] = useState(null);
@@ -18,20 +17,6 @@ const InsectDetector = ({ latitude, longitude, nasaData }) => {
     useEffect(() => {
         chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
-
-    useEffect(() => {
-        fetchLocationInfo();
-    }, [latitude, longitude]);
-
-    const fetchLocationInfo = async () => {
-        try {
-            const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
-            const data = await response.json();
-            setLocationInfo(data);
-        } catch (error) {
-            console.error('Error fetching location info:', error);
-        }
-    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -46,11 +31,13 @@ const InsectDetector = ({ latitude, longitude, nasaData }) => {
         setIsLoading(true);
 
         try {
-            const response = await fetch('/api/detect-insect', {
+            const response = await fetch('/api/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
-                    image: mode === 'text' ? null : image  // Send image data if not in text mode
+                    messages: [...messages, userMessage], 
+                    mode,
+                    image: mode === 'text' ? null : image
                 }),
             });
 
@@ -59,7 +46,7 @@ const InsectDetector = ({ latitude, longitude, nasaData }) => {
             const data = await response.json();
             setMessages(prev => [...prev, { role: 'assistant', content: data.content }]);
         } catch (error) {
-            console.error("Error calling detect-insect API:", error);
+            console.error("Error calling chat API:", error);
             setMessages(prev => [...prev, { role: 'assistant', content: "I'm sorry, I encountered an error. Please try again later." }]);
         } finally {
             setIsLoading(false);
@@ -107,7 +94,7 @@ const InsectDetector = ({ latitude, longitude, nasaData }) => {
             return <ReactMarkdown>{content}</ReactMarkdown>;
         } else if (content && typeof content === 'object') {
             if (content.image) {
-                return <img src={content.image} alt="User uploaded" className="max-w-[200px] h-auto rounded-lg" />;
+                return <img src={content.image} alt="User uploaded" className="max-w-full h-auto rounded-lg" />;
             } else if (content.text) {
                 return <ReactMarkdown>{content.text}</ReactMarkdown>;
             }
