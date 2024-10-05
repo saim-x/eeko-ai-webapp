@@ -1,7 +1,3 @@
-import jwt from 'jsonwebtoken';
-
-const JWT_SECRET = process.env.JWT_SECRET;
-
 export default function handler(req, res) {
   if (req.method === 'POST') {
     const { username, password } = req.body;
@@ -9,8 +5,7 @@ export default function handler(req, res) {
     // In a real application, you would validate the username and password against a database
     // For this example, we'll use a hardcoded check
     if (username === 'admin' && password === 'password') {
-      const token = jwt.sign({ username }, JWT_SECRET, { expiresIn: '1h' });
-      res.status(200).json({ token });
+      res.status(200).json({ message: 'Login successful' });
     } else {
       res.status(401).json({ message: 'Invalid credentials' });
     }

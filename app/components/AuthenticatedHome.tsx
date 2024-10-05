@@ -1,10 +1,10 @@
 import React from 'react';
 import Link from 'next/link';
-import { User } from '@clerk/nextjs/server';
+import { UserResource } from '@clerk/types';
 import { Leaf, Droplet, MessageSquare, Bug, Satellite } from 'lucide-react';
 
 interface AuthenticatedHomeProps {
-  user: User | null;
+  user: UserResource | null;
 }
 
 const FeatureCard: React.FC<{ title: string; description: string; icon: React.ReactNode; href: string }> = ({ title, description, icon, href }) => (
