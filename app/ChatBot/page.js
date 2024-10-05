@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { FaPaperPlane, FaCamera, FaUpload, FaMapMarkerAlt, FaSatellite } from 'react-icons/fa';
+import { FaPaperPlane, FaCamera, FaUpload, FaMapMarkerAlt, FaSatellite, FaRobot } from 'react-icons/fa';
 import ReactMarkdown from 'react-markdown';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -146,7 +146,22 @@ Please analyze the NASA POWER data provided above and use it to inform your resp
 
     const renderMessageContent = (content) => {
         if (typeof content === 'string') {
-            return <ReactMarkdown>{content}</ReactMarkdown>;
+            return (
+                <ReactMarkdown
+                    components={{
+                        p: ({ node, ...props }) => <p className="mb-2" {...props} />,
+                        h1: ({ node, ...props }) => <h1 className="text-2xl font-bold mb-2" {...props} />,
+                        h2: ({ node, ...props }) => <h2 className="text-xl font-bold mb-2" {...props} />,
+                        h3: ({ node, ...props }) => <h3 className="text-lg font-bold mb-2" {...props} />,
+                        ul: ({ node, ...props }) => <ul className="list-disc list-inside mb-2" {...props} />,
+                        ol: ({ node, ...props }) => <ol className="list-decimal list-inside mb-2" {...props} />,
+                        li: ({ node, ...props }) => <li className="mb-1" {...props} />,
+                        a: ({ node, ...props }) => <a className="text-blue-600 hover:underline" {...props} />,
+                    }}
+                >
+                    {content}
+                </ReactMarkdown>
+            );
         } else if (content && typeof content === 'object' && content.image) {
             return <img src={content.image} alt="User uploaded" className="max-w-full h-auto rounded-lg" />;
         }
@@ -191,11 +206,17 @@ Please analyze the NASA POWER data provided above and use it to inform your resp
     };
 
     return (
-        <div className={`${inter.className} bg-gradient-to-br from-gray-100 to-gray-200 min-h-screen flex flex-col`}>
+        <div className={`${inter.className} bg-gradient-to-br from-green-50 to-blue-50 min-h-screen flex flex-col`}>
             <Header />
-
-            <div className="flex-grow flex mt-16 flex-col p-4 sm:p-6 max-w-5xl mx-auto w-full">
-                <div className="flex-grow overflow-y-auto mb-6 space-y-6 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-200 pr-2 sm:pr-4">
+            <div className="flex-grow flex flex-col p-4 sm:p-6 max-w-6xl mx-auto w-full">
+                <div className="bg-white rounded-2xl shadow-xl p-6 mb-6">
+                    <h1 className="text-3xl font-bold text-green-600 mb-4 flex items-center">
+                        <FaRobot className="mr-2" /> AgriBot Assistant
+                    </h1>
+                    <p className="text-gray-600">Your AI-powered agricultural companion. Ask questions, get insights, and make data-driven decisions for your farm.</p>
+                </div>
+                
+                <div className="flex-grow overflow-y-auto mb-6 space-y-6 scrollbar-thin scrollbar-thumb-green-400 scrollbar-track-gray-200 pr-2 sm:pr-4 bg-white rounded-2xl shadow-xl p-6">
                     {messages.map((message, index) => (
                         <motion.div
                             key={index}
@@ -204,7 +225,7 @@ Please analyze the NASA POWER data provided above and use it to inform your resp
                             transition={{ duration: 0.5 }}
                             className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                         >
-                            <div className={`max-w-[75%] sm:max-w-3/4 p-3 sm:p-4 rounded-2xl shadow-lg ${message.role === 'user' ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-900'}`}>
+                            <div className={`max-w-[75%] sm:max-w-3/4 p-3 sm:p-4 rounded-2xl shadow-lg ${message.role === 'user' ? 'bg-green-600 text-white' : 'bg-blue-100 text-gray-900'}`}>
                                 {renderMessageContent(message.content)}
                             </div>
                         </motion.div>
@@ -212,7 +233,7 @@ Please analyze the NASA POWER data provided above and use it to inform your resp
                     <div ref={chatEndRef} />
                 </div>
 
-                <div className="bg-gray-200 rounded-2xl p-4 sm:p-6 space-y-4 sm:space-y-6 shadow-xl">
+                <div className="bg-white rounded-2xl p-6 space-y-4 sm:space-y-6 shadow-xl">
                     <div className="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-4">
                         <Input
                             type="text"
@@ -228,28 +249,28 @@ Please analyze the NASA POWER data provided above and use it to inform your resp
                             placeholder="Longitude"
                             className="w-full sm:flex-grow bg-gray-100 text-gray-900 placeholder-gray-500 border-gray-300"
                         />
-                        <Button onClick={handleGetCurrentLocation} variant="secondary" className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white">
+                        <Button onClick={handleGetCurrentLocation} variant="secondary" className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white">
                             <FaMapMarkerAlt className="mr-2" />
                             Get Location
                         </Button>
                     </div>
 
                     <div className="flex flex-wrap justify-center gap-2 mt-4">
-                        <Button onClick={() => { setLatitude("31.582045"); setLongitude("74.329376"); }} className="bg-gray-300 hover:bg-gray-400 text-gray-900 text-xs sm:text-sm py-1 px-2">
-                            Gojra (Punjab)
-                        </Button>
-                        <Button onClick={() => { setLatitude("24.860966"); setLongitude("67.001137"); }} className="bg-gray-300 hover:bg-gray-400 text-gray-900 text-xs sm:text-sm py-1 px-2">
-                            Sehwan (Sindh)
-                        </Button>
-                        <Button onClick={() => { setLatitude("34.008053"); setLongitude("71.578640"); }} className="bg-gray-300 hover:bg-gray-400 text-gray-900 text-xs sm:text-sm py-1 px-2">
-                            Charsadda (KPK)
-                        </Button>
-                        <Button onClick={() => { setLatitude("28.394857"); setLongitude("66.261768"); }} className="bg-gray-300 hover:bg-gray-400 text-gray-900 text-xs sm:text-sm py-1 px-2">
-                            Khuzdar (Balochistan)
-                        </Button>
-                        <Button onClick={() => { setLatitude("35.350659"); setLongitude("74.857989"); }} className="bg-gray-300 hover:bg-gray-400 text-gray-900 text-xs sm:text-sm py-1 px-2">
-                            Skardu (Gilgit-Baltistan)
-                        </Button>
+                        {[
+                            { name: "Gojra (Punjab)", lat: "31.582045", lon: "74.329376" },
+                            { name: "Sehwan (Sindh)", lat: "24.860966", lon: "67.001137" },
+                            { name: "Charsadda (KPK)", lat: "34.008053", lon: "71.578640" },
+                            { name: "Khuzdar (Balochistan)", lat: "28.394857", lon: "66.261768" },
+                            { name: "Skardu (Gilgit-Baltistan)", lat: "35.350659", lon: "74.857989" }
+                        ].map((location) => (
+                            <Button 
+                                key={location.name}
+                                onClick={() => { setLatitude(location.lat); setLongitude(location.lon); }} 
+                                className="bg-blue-100 hover:bg-blue-200 text-blue-800 text-xs sm:text-sm py-1 px-2 rounded-full"
+                            >
+                                {location.name}
+                            </Button>
+                        ))}
                     </div>
 
                     {image && (
@@ -273,7 +294,7 @@ Please analyze the NASA POWER data provided above and use it to inform your resp
                             className="w-full sm:flex-grow bg-gray-100 text-gray-900 placeholder-gray-500 border-gray-300 text-base sm:text-lg py-2 sm:py-3"
                             placeholder="Ask about agriculture..."
                         />
-                        <Button type="submit" disabled={isLoading} className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white text-base sm:text-lg py-2 sm:py-3 px-4 sm:px-6">
+                        <Button type="submit" disabled={isLoading} className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white text-base sm:text-lg py-2 sm:py-3 px-4 sm:px-6">
                             <FaPaperPlane className="mr-2" />
                             Send
                         </Button>
@@ -281,7 +302,7 @@ Please analyze the NASA POWER data provided above and use it to inform your resp
 
                     <Button
                         onClick={() => setShowNasaData(!showNasaData)}
-                        className="w-full sm:w-auto bg-gray-300 hover:bg-gray-400 text-gray-900 text-base sm:text-lg py-2 sm:py-3 px-4 sm:px-6 mt-4"
+                        className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white text-base sm:text-lg py-2 sm:py-3 px-4 sm:px-6 mt-4"
                     >
                         <FaSatellite className="mr-2" />
                         {showNasaData ? 'Hide NASA Data' : 'Show NASA Data'}

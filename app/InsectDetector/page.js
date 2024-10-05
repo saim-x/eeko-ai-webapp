@@ -1,44 +1,53 @@
 'use client'
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { FaPaperPlane, FaCamera, FaUpload, FaRobot } from 'react-icons/fa';
+import { FaCamera, FaUpload, FaBug } from 'react-icons/fa';
 import ReactMarkdown from 'react-markdown';
 import Header from '../components/Header';
+import { useRouter } from 'next/navigation';
+import { useUser } from '@clerk/nextjs';
+import { Button } from '@/components/ui/button';
 
 const InsectDetector = () => {
+    const router = useRouter();
+    const { isLoaded, isSignedIn, user } = useUser();
     const [messages, setMessages] = useState([]);
-    const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const chatEndRef = useRef(null);
-    const [mode, setMode] = useState('text');
+    const [mode, setMode] = useState('upload');
     const [image, setImage] = useState(null);
     const fileInputRef = useRef(null);
+    const videoRef = useRef(null);
+    const canvasRef = useRef(null);
+    const streamRef = useRef(null);
+
+    useEffect(() => {
+        if (isLoaded && !isSignedIn) {
+            router.push('/sign-in');
+        }
+    }, [isLoaded, isSignedIn, router]);
 
     useEffect(() => {
         chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        if ((!input.trim() && mode === 'text') || (!image && (mode === 'camera' || mode === 'upload'))) return;
+    const handleSubmit = async () => {
+        if (!image) return;
 
         const userMessage = { 
             role: 'user', 
-            content: mode === 'text' ? input : { image: image }
+            content: { image: image }
         };
         setMessages(prev => [...prev, userMessage]);
-        setInput('');
         setIsLoading(true);
 
         try {
-            const response = await fetch('/api/chat', {
+            const response = await fetch('/api/detect-insect', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    messages: [...messages, userMessage], 
-                    mode,
-                    image: mode === 'text' ? null : image
-                }),
+                headers: { 
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ image: image }),
             });
 
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
@@ -46,35 +55,46 @@ const InsectDetector = () => {
             const data = await response.json();
             setMessages(prev => [...prev, { role: 'assistant', content: data.content }]);
         } catch (error) {
-            console.error("Error calling chat API:", error);
-            setMessages(prev => [...prev, { role: 'assistant', content: "I'm sorry, I encountered an error. Please try again later." }]);
+            console.error("Error calling image analysis API:", error);
+            setMessages(prev => [...prev, { role: 'assistant', content: "I'm sorry, I encountered an error while analyzing the image. Please try again later." }]);
         } finally {
             setIsLoading(false);
             setImage(null);
-            setMode('text');
         }
     };
 
     const handleCameraCapture = async () => {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-            const videoElement = document.createElement('video');
-            videoElement.srcObject = stream;
-            await videoElement.play();
-
-            const canvas = document.createElement('canvas');
-            canvas.width = videoElement.videoWidth;
-            canvas.height = videoElement.videoHeight;
-            canvas.getContext('2d').drawImage(videoElement, 0, 0);
-
-            const imageDataUrl = canvas.toDataURL('image/jpeg');
-            setImage(imageDataUrl);
+            streamRef.current = stream;
+            if (videoRef.current) {
+                videoRef.current.srcObject = stream;
+                videoRef.current.play();
+            }
             setMode('camera');
-
-            stream.getTracks().forEach(track => track.stop());
         } catch (error) {
             console.error('Error accessing camera:', error);
         }
+    };
+
+    const captureFrame = () => {
+        if (videoRef.current && canvasRef.current) {
+            const context = canvasRef.current.getContext('2d');
+            canvasRef.current.width = videoRef.current.videoWidth;
+            canvasRef.current.height = videoRef.current.videoHeight;
+            context.drawImage(videoRef.current, 0, 0, canvasRef.current.width, canvasRef.current.height);
+            const imageDataUrl = canvasRef.current.toDataURL('image/jpeg');
+            setImage(imageDataUrl);
+            stopCamera();
+        }
+    };
+
+    const stopCamera = () => {
+        if (streamRef.current) {
+            streamRef.current.getTracks().forEach(track => track.stop());
+            streamRef.current = null;
+        }
+        setMode('upload');
     };
 
     const handleImageUpload = (e) => {
@@ -83,7 +103,6 @@ const InsectDetector = () => {
             const reader = new FileReader();
             reader.onloadend = () => {
                 setImage(reader.result);
-                setMode('upload');
             };
             reader.readAsDataURL(file);
         }
@@ -91,26 +110,44 @@ const InsectDetector = () => {
 
     const renderMessageContent = (content) => {
         if (typeof content === 'string') {
-            return <ReactMarkdown>{content}</ReactMarkdown>;
+            return (
+                <ReactMarkdown
+                    components={{
+                        p: ({ node, ...props }) => <p className="mb-2" {...props} />,
+                        h1: ({ node, ...props }) => <h1 className="text-2xl font-bold mb-2" {...props} />,
+                        h2: ({ node, ...props }) => <h2 className="text-xl font-bold mb-2" {...props} />,
+                        h3: ({ node, ...props }) => <h3 className="text-lg font-bold mb-2" {...props} />,
+                        ul: ({ node, ...props }) => <ul className="list-disc list-inside mb-2" {...props} />,
+                        ol: ({ node, ...props }) => <ol className="list-decimal list-inside mb-2" {...props} />,
+                        li: ({ node, ...props }) => <li className="mb-1" {...props} />,
+                        a: ({ node, ...props }) => <a className="text-blue-600 hover:underline" {...props} />,
+                    }}
+                >
+                    {content}
+                </ReactMarkdown>
+            );
         } else if (content && typeof content === 'object') {
             if (content.image) {
                 return <img src={content.image} alt="User uploaded" className="max-w-full h-auto rounded-lg" />;
-            } else if (content.text) {
-                return <ReactMarkdown>{content.text}</ReactMarkdown>;
             }
         }
         return <p>Unsupported message content</p>;
     };
 
+    if (!isLoaded || !isSignedIn) {
+        return null; // or a loading spinner
+    }
+
     return (
-        <div className="bg-gray-100 min-h-screen flex flex-col">
+        <div className="bg-gradient-to-br from-green-50 to-blue-50 min-h-screen flex flex-col">
             <Header />
-            <div className="flex-grow flex justify-center items-center p-4">
-                <div className="bg-white rounded-lg shadow-xl p-6 max-w-4xl w-full flex flex-col">
-                    <h2 className="text-2xl font-bold mb-6 text-gray-800 flex items-center">
-                        <FaRobot className="mr-2" /> Insect Detector and Visual Analyzer
+            <div className="flex-grow flex justify-center items-start p-4 pt-20">
+                <div className="bg-white rounded-2xl shadow-xl p-6 max-w-4xl w-full flex flex-col">
+                    <h2 className="text-3xl font-bold mb-6 text-green-600 flex items-center">
+                        <FaBug className="mr-2" /> Insect Detector
                     </h2>
-                    <div className="flex-grow overflow-y-auto mb-6 space-y-4">
+                    <p className="text-gray-600 mb-6">Upload or capture an image to detect and analyze insects in your crops.</p>
+                    <div className="flex-grow overflow-y-auto mb-6 space-y-4 max-h-96">
                         {messages.map((message, index) => (
                             <motion.div
                                 key={index}
@@ -119,8 +156,8 @@ const InsectDetector = () => {
                                 transition={{ duration: 0.5 }}
                                 className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                             >
-                                <div className={`max-w-[75%] p-3 rounded-lg shadow ${
-                                    message.role === 'user' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
+                                <div className={`max-w-[75%] p-3 rounded-2xl shadow ${
+                                    message.role === 'user' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
                                 }`}>
                                     {renderMessageContent(message.content)}
                                 </div>
@@ -129,15 +166,12 @@ const InsectDetector = () => {
                         <div ref={chatEndRef} />
                     </div>
                     <div className="flex space-x-2 mb-4">
-                        <button onClick={() => setMode('text')} className={`p-2 rounded-full ${mode === 'text' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-600'}`}>
-                            <FaPaperPlane />
-                        </button>
-                        <button onClick={handleCameraCapture} className={`p-2 rounded-full ${mode === 'camera' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-600'}`}>
-                            <FaCamera />
-                        </button>
-                        <button onClick={() => fileInputRef.current.click()} className={`p-2 rounded-full ${mode === 'upload' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-600'}`}>
-                            <FaUpload />
-                        </button>
+                        <Button onClick={handleCameraCapture} variant={mode === 'camera' ? 'default' : 'outline'} className="flex-1">
+                            <FaCamera className="mr-2" /> Camera
+                        </Button>
+                        <Button onClick={() => fileInputRef.current.click()} variant={mode === 'upload' ? 'default' : 'outline'} className="flex-1">
+                            <FaUpload className="mr-2" /> Upload
+                        </Button>
                         <input
                             type="file"
                             ref={fileInputRef}
@@ -146,28 +180,21 @@ const InsectDetector = () => {
                             className="hidden"
                         />
                     </div>
-                    {image && (
+                    {mode === 'camera' && (
                         <div className="mb-4">
-                            <img src={image} alt="Captured or uploaded image" className="max-w-[300px] h-auto rounded-lg shadow" />
+                            <video ref={videoRef} className="w-full h-auto rounded-lg" autoPlay playsInline muted />
+                            <canvas ref={canvasRef} className="hidden" />
+                            <Button onClick={captureFrame} className="mt-2 w-full">Capture Frame</Button>
                         </div>
                     )}
-                    <form onSubmit={handleSubmit} className="flex">
-                        <input
-                            type="text"
-                            value={input}
-                            onChange={(e) => setInput(e.target.value)}
-                            className="flex-grow bg-gray-100 text-gray-800 rounded-l-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-300"
-                            placeholder="Attach an image to analyze.."
-                            disabled={mode !== 'text'}
-                        />
-                        <button
-                            type="submit"
-                            className="bg-blue-500 text-white rounded-r-lg p-3 hover:bg-blue-600 transition duration-300 flex items-center justify-center"
-                            disabled={isLoading}
-                        >
-                            <FaPaperPlane />
-                        </button>
-                    </form>
+                    {image && (
+                        <div className="mb-4">
+                            <img src={image} alt="Captured or uploaded image" className="max-w-full h-auto rounded-lg shadow" />
+                            <Button onClick={handleSubmit} className="mt-2 w-full bg-green-600 text-white" disabled={isLoading}>
+                                {isLoading ? 'Analyzing...' : 'Analyze Image'}
+                            </Button>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

@@ -302,14 +302,13 @@ export default function NasaData() {
     };
 
     return (
-
         <div className={`${inter.className} min-h-screen bg-gray-100 bg-cover bg-center text-gray-900 p-4 sm:p-8 overflow-x-hidden`} style={{ backgroundImage: "url('/farm-video-background.mp4')" }}>
             <Header />
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
-                className="max-w-4xl mx-auto mt-16 bg-white rounded-xl shadow-lg overflow-hidden"
+                className="max-w-4xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden" // Removed mt-24
             >
                 <div className="p-6 sm:p-10 bg-gradient-to-br from-blue-50 to-green-50">
                     <div className="flex items-center justify-between mb-8">
