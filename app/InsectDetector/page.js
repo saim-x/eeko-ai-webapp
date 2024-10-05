@@ -157,7 +157,7 @@ const InsectDetector = () => {
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
                             className="flex-grow bg-gray-100 text-gray-800 rounded-l-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-300"
-                            placeholder="Attach an image to analyze..."
+                            placeholder="Attach an image to analyze.."
                             disabled={mode !== 'text'}
                         />
                         <button
