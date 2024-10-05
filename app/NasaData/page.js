@@ -4,8 +4,8 @@ import { motion } from "framer-motion";
 import { FaLocationArrow, FaCalendarAlt, FaSearch, FaGlobeAfrica, FaTemperatureHigh, FaSun, FaCheckCircle, FaSnowflake, FaCloudRain, FaCloudSunRain, FaWater, FaWind, FaTint, FaCloudSun } from "react-icons/fa";
 import { Inter } from 'next/font/google';
 import { FaSatellite } from 'react-icons/fa';
-import AgriChatbot from './AgriChatbot';
-
+import AgriChatbot from '../components/AgriChatbot';
+import Header from '../components/Header';
 const inter = Inter({ subsets: ['latin'] });
 
 const presetLocations = [
@@ -303,51 +303,52 @@ export default function NasaData() {
     };
 
     return (
-        <div className={`${inter.className} min-h-screen bg-transparent text-gray-100 p-4 sm:p-8 overflow-x-hidden`}>
-            {/* <NASABackground /> */}
+
+        <div className={`${inter.className} min-h-screen bg-gray-100 bg-cover bg-center text-gray-900 p-4 sm:p-8 overflow-x-hidden`} style={{ backgroundImage: "url('/farm-video-background.mp4')" }}>
+            <Header />
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
-                className="max-w-4xl mx-auto bg-gray-800/70 rounded-xl shadow-lg overflow-hidden"
+                className="max-w-4xl mx-auto mt-16 bg-white rounded-xl shadow-lg overflow-hidden"
             >
-                <div className="p-4 sm:p-8">
-                    <div className="flex items-center justify-between mb-6">
-                        <h1 className="text-2xl sm:text-3xl font-bold text-gray-100">NASA Weather Data Explorer</h1>
+                <div className="p-6 sm:p-10 bg-gradient-to-br from-blue-50 to-green-50">
+                    <div className="flex items-center justify-between mb-8">
+                        <h1 className="text-3xl sm:text-4xl font-bold text-gray-800">NASA Weather Data Explorer</h1>
                         <motion.button
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
                             onClick={() => window.location.reload()}
-                            className="text-gray-100 hover:text-blue-400 transition-colors duration-300"
+                            className="text-blue-600 hover:text-blue-800 transition-colors duration-300"
                             aria-label="Refresh page"
                         >
-                            <FaSatellite className="text-3xl" />
+                            <FaSatellite className="text-4xl" />
                         </motion.button>
                     </div>
-                    <form onSubmit={fetchData} className="space-y-4 sm:space-y-6">
-                        <div className="flex flex-col sm:flex-row sm:space-x-4 space-y-4 sm:space-y-0">
-                            <div className="flex-1">
-                                <label className="block text-sm font-medium text-gray-300 mb-1">Latitude</label>
+                    <form onSubmit={fetchData} className="space-y-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Latitude</label>
                                 <div className="relative">
                                     <input
                                         type="text"
                                         value={latitude}
                                         onChange={(e) => setLatitude(e.target.value)}
-                                        className="w-full pl-10 pr-3 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-100"
+                                        className="w-full pl-10 pr-3 py-2 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
                                         placeholder="Enter latitude"
                                         required
                                     />
                                     <FaLocationArrow className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                                 </div>
                             </div>
-                            <div className="flex-1">
-                                <label className="block text-sm font-medium text-gray-300 mb-1">Longitude</label>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Longitude</label>
                                 <div className="relative">
                                     <input
                                         type="text"
                                         value={longitude}
                                         onChange={(e) => setLongitude(e.target.value)}
-                                        className="w-full pl-10 pr-3 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-100"
+                                        className="w-full pl-10 pr-3 py-2 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
                                         placeholder="Enter longitude"
                                         required
                                     />
@@ -356,58 +357,58 @@ export default function NasaData() {
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
                             {presetLocations.map((location, index) => (
                                 <motion.button
                                     key={index}
-                                    whileHover={{ scale: 1.02 }}
-                                    whileTap={{ scale: 0.98 }}
+                                    whileHover={{ scale: 1.03 }}
+                                    whileTap={{ scale: 0.97 }}
                                     type="button"
                                     onClick={() => setPresetLocation(location.lat, location.lon)}
-                                    className="bg-gray-700 text-white py-1.5 px-2 rounded-md hover:bg-gray-600 transition duration-300 flex flex-col items-start justify-center shadow-sm"
+                                    className="bg-white text-gray-800 py-2 px-3 rounded-lg hover:bg-gray-100 transition duration-300 flex flex-col items-start justify-center shadow-sm border border-gray-200"
                                 >
-                                    <span className="text-xs font-medium w-full" style={{ wordWrap: 'break-word', whiteSpace: 'normal' }}>{location.name}</span>
-                                    <span className="text-[9px] text-gray-300 w-full" style={{ wordWrap: 'break-word', whiteSpace: 'normal' }}>{location.subtitle}</span>
+                                    <span className="text-xs font-medium w-full truncate">{location.name}</span>
+                                    <span className="text-[9px] text-gray-500 w-full truncate">{location.subtitle}</span>
                                 </motion.button>
                             ))}
                         </div>
 
                         <motion.button
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
                             type="button"
                             onClick={getCurrentLocation}
-                            className="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition duration-300 flex items-center justify-center"
+                            className="w-full bg-green-500 text-white py-3 px-4 rounded-lg hover:bg-green-600 transition duration-300 flex items-center justify-center shadow-md"
                         >
                             <FaLocationArrow className="mr-2" />
                             Use Current Location
                         </motion.button>
 
-                        {locationLoading && <p className="text-blue-400">Getting location...</p>}
-                        {locationError && <p className="text-red-400">{locationError}</p>}
+                        {locationLoading && <p className="text-blue-600">Getting location...</p>}
+                        {locationError && <p className="text-red-600">{locationError}</p>}
 
-                        <div className="flex flex-col sm:flex-row sm:space-x-4 space-y-4 sm:space-y-0">
-                            <div className="flex-1">
-                                <label className="block text-sm font-medium text-gray-300 mb-1">Start Date</label>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
                                 <div className="relative">
                                     <input
                                         type="date"
                                         value={startDate}
                                         onChange={(e) => setStartDate(e.target.value)}
-                                        className="w-full pl-10 pr-3 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-100"
+                                        className="w-full pl-10 pr-3 py-2 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
                                         required
                                     />
                                     <FaCalendarAlt className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                                 </div>
                             </div>
-                            <div className="flex-1">
-                                <label className="block text-sm font-medium text-gray-300 mb-1">End Date</label>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">End Date</label>
                                 <div className="relative">
                                     <input
                                         type="date"
                                         value={endDate}
                                         onChange={(e) => setEndDate(e.target.value)}
-                                        className="w-full pl-10 pr-3 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-100"
+                                        className="w-full pl-10 pr-3 py-2 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
                                         required
                                     />
                                     <FaCalendarAlt className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
@@ -415,41 +416,26 @@ export default function NasaData() {
                             </div>
                         </div>
 
-                        <div className="flex justify-between space-x-2">
-                            <motion.button
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.98 }}
-                                type="button"
-                                onClick={() => setDateRange('year')}
-                                className="flex-1 bg-gray-700 text-gray-200 py-2 px-4 rounded-md hover:bg-gray-600 transition duration-300 text-sm sm:text-base"
-                            >
-                                Past Year
-                            </motion.button>
-                            <motion.button
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.98 }}
-                                type="button"
-                                onClick={() => setDateRange('month')}
-                                className="flex-1 bg-gray-700 text-gray-200 py-2 px-4 rounded-md hover:bg-gray-600 transition duration-300 text-sm sm:text-base"
-                            >
-                                Past Month
-                            </motion.button>
-                            <motion.button
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.98 }}
-                                type="button"
-                                onClick={() => setDateRange('week')}
-                                className="flex-1 bg-gray-700 text-gray-200 py-2 px-4 rounded-md hover:bg-gray-600 transition duration-300 text-sm sm:text-base"
-                            >
-                                Past Week
-                            </motion.button>
+                        <div className="flex justify-between space-x-3">
+                            {['year', 'month', 'week'].map((range) => (
+                                <motion.button
+                                    key={range}
+                                    whileHover={{ scale: 1.03 }}
+                                    whileTap={{ scale: 0.97 }}
+                                    type="button"
+                                    onClick={() => setDateRange(range)}
+                                    className="flex-1 bg-white text-gray-800 py-2 px-4 rounded-lg hover:bg-gray-100 transition duration-300 text-sm sm:text-base shadow-sm border border-gray-200"
+                                >
+                                    Past {range.charAt(0).toUpperCase() + range.slice(1)}
+                                </motion.button>
+                            ))}
                         </div>
 
                         <motion.button
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
                             type="submit"
-                            className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition duration-300 flex items-center justify-center"
+                            className="w-full bg-blue-500 text-white py-3 px-4 rounded-lg hover:bg-blue-600 transition duration-300 flex items-center justify-center shadow-md"
                         >
                             <FaSearch className="mr-2" />
                             Fetch NASA Data
@@ -466,12 +452,26 @@ export default function NasaData() {
                         <motion.div
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
-                            className="mt-8 bg-red-900 border-l-4 border-red-500 text-red-100 p-4 rounded"
+                            className="mt-8 bg-red-100 border-l-4 border-red-500 text-red-900 p-4 rounded-lg"
                         >
                             <p className="font-bold">Error</p>
                             <p>{error}</p>
                         </motion.div>
                     )}
+
+                    <div className="mt-8 bg-gradient-to-r from-green-400 to-blue-500 rounded-lg shadow-lg p-6">
+                        <h3 className="text-white text-xl font-semibold mb-4">AI-Powered Agricultural Assistant</h3>
+                        <p className="text-white text-sm mb-6">Get personalized farming advice and insights from our intelligent chatbot.</p>
+                        <motion.button
+                            whileHover={{ scale: 1.05, boxShadow: "0px 0px 8px rgb(255,255,255)" }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => window.location.href = '/ChatBot'}
+                            className="w-full bg-white text-green-600 font-bold py-3 px-6 rounded-full hover:bg-opacity-90 transition duration-300 flex items-center justify-center"
+                        >
+                            <FaGlobeAfrica className="mr-3 text-xl" />
+                            Start AI Consultation
+                        </motion.button>
+                    </div>
 
                     {data && data.properties && data.properties.parameter && data.properties.parameter.T2M && (
                         <motion.div
@@ -480,26 +480,26 @@ export default function NasaData() {
                             transition={{ duration: 0.5 }}
                             className="mt-8"
                         >
-                            <h2 className="text-xl sm:text-2xl font-bold text-gray-100 mb-4">NASA Weather Data</h2>
-                            <div className="mb-8 bg-gray-700 border-l-4 border-green-500 p-4 rounded-lg">
-                                <h3 className="text-lg sm:text-xl font-semibold text-green-400 mb-2">Agricultural Insights</h3>
+                            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4">NASA Weather Data</h2>
+                            <div className="mb-8 bg-gradient-to-r from-green-100 to-blue-100 border-l-4 border-green-500 p-6 rounded-lg shadow-lg">
+                                <h3 className="text-2xl sm:text-3xl font-bold text-green-600 mb-4">Agricultural Insights</h3>
                                 {(() => {
                                     const { insights, unavailableData } = getAgriculturalInsights(data);
                                     if (insights.length > 0) {
                                         return (
-                                            <ul className="space-y-4">
+                                            <ul className="space-y-6">
                                                 {insights.map((item, index) => {
                                                     const IconComponent = getIconComponent(item.iconName);
                                                     return (
-                                                        <li key={index} className="bg-gray-800 p-4 rounded-lg shadow">
-                                                            <div className="flex flex-col sm:flex-row sm:items-center">
+                                                        <li key={index} className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300">
+                                                            <div className="flex flex-col sm:flex-row sm:items-center mb-3">
                                                                 <div className="flex items-center mb-2 sm:mb-0">
-                                                                    {IconComponent && <IconComponent className="text-green-400 mr-2 text-xl sm:text-2xl" />}
-                                                                    <p className="text-green-400 font-semibold text-sm sm:text-base">{item.insight}</p>
+                                                                    {IconComponent && <IconComponent className="text-green-600 mr-3 text-3xl sm:text-4xl" />}
+                                                                    <h4 className="text-green-600 font-bold text-lg sm:text-xl">{item.insight}</h4>
                                                                 </div>
                                                             </div>
-                                                            <p className="text-gray-300 mt-2 text-xs sm:text-sm"><span className="font-medium">Technical:</span> {item.technical}</p>
-                                                            <p className="text-gray-300 mt-1 text-xs sm:text-sm"><span className="font-medium">Reason:</span> {item.reason}</p>
+                                                            <p className="text-gray-700 mt-2 text-sm sm:text-base"><span className="font-semibold">Technical:</span> {item.technical}</p>
+                                                            <p className="text-gray-700 mt-2 text-sm sm:text-base"><span className="font-semibold">Reason:</span> {item.reason}</p>
                                                         </li>
                                                     );
                                                 })}
@@ -507,48 +507,45 @@ export default function NasaData() {
                                         );
                                     } else if (unavailableData.length > 0) {
                                         return (
-                                            <div className="text-yellow-300 text-sm sm:text-base">
-                                                <p>Some data is unavailable or invalid:</p>
+                                            <div className="bg-yellow-100 p-4 rounded-lg">
+                                                <p className="text-yellow-700 font-semibold text-base sm:text-lg mb-2">Some data is unavailable or invalid:</p>
                                                 <ul className="list-disc pl-5 mt-2">
                                                     {unavailableData.map((item, index) => (
-                                                        <li key={index} className="text-xs sm:text-sm">{item.param}: {item.reason}</li>
+                                                        <li key={index} className="text-yellow-600 text-sm sm:text-base">{item.param}: {item.reason}</li>
                                                     ))}
                                                 </ul>
                                             </div>
                                         );
                                     } else {
-                                        return <p className="text-gray-300 text-sm sm:text-base">No specific insights available for the current data.</p>;
+                                        return <p className="text-gray-700 text-base sm:text-lg font-medium">No specific insights available for the current data.</p>;
                                     }
                                 })()}
                             </div>
-                            <div className="overflow-x-auto bg-gray-800 rounded-lg shadow">
+                            <div className="overflow-x-auto bg-white rounded-lg shadow">
                                 <table className="w-full table-auto">
                                     <thead>
-                                        <tr className="bg-gray-700 border-b border-gray-600">
-                                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Time</th>
-                                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Temp (°C)</th>
-                                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Precip (mm/h)</th>
-                                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Wind (m/s)</th>
-                                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Humidity (%)</th>
-                                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Solar (W/m^2)</th>
+                                        <tr className="bg-gray-200 border-b border-gray-300">
+                                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Time</th>
+                                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Temp (°C)</th>
+                                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Precip (mm/h)</th>
+                                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Wind (m/s)</th>
+                                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Humidity (%)</th>
+                                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Solar (W/m^2)</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="bg-gray-800 divide-y divide-gray-700">
+                                    <tbody className="bg-white divide-y divide-gray-200">
                                         {Object.keys(data.properties.parameter.T2M).map((time, index) => (
-                                            <tr key={time} className={index % 2 === 0 ? "bg-gray-750" : "bg-gray-800"}>
-                                                <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-300">{time}</td>
-                                                <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-100">{data.properties.parameter.T2M[time]?.toFixed(1)}</td>
-                                                <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-100">{(data.properties.parameter.PRECTOTCORR[time] || 0).toFixed(2)}</td>
-                                                <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-100">{data.properties.parameter.WS2M[time]?.toFixed(1)}</td>
-                                                <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-100">{data.properties.parameter.RH2M[time]?.toFixed(1)}</td>
-                                                <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-100">{data.properties.parameter.ALLSKY_SFC_SW_DWN[time]?.toFixed(1)}</td>
+                                            <tr key={time} className={index % 2 === 0 ? "bg-gray-100" : "bg-white"}>
+                                                <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-700">{time}</td>
+                                                <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{data.properties.parameter.T2M[time]?.toFixed(1)}</td>
+                                                <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{(data.properties.parameter.PRECTOTCORR[time] || 0).toFixed(2)}</td>
+                                                <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{data.properties.parameter.WS2M[time]?.toFixed(1)}</td>
+                                                <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{data.properties.parameter.RH2M[time]?.toFixed(1)}</td>
+                                                <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{data.properties.parameter.ALLSKY_SFC_SW_DWN[time]?.toFixed(1)}</td>
                                             </tr>
                                         ))}
                                     </tbody>
                                 </table>
-                            </div>
-                            <div className="mt-8">
-                                <AgriChatbot latitude={latitude} longitude={longitude} nasaData={data} />
                             </div>
                         </motion.div>
                     )}
