@@ -104,7 +104,7 @@ const AgriChatbot = ({ latitude, longitude, nasaData }) => {
                 messages.push({
                     role: "user",
                     content: [
-                        { type: "text", text: "Analyze this agricultural image and provide insights:" },
+                        { type: "text", text: "Analyze this space use chemical references in the image and provide insights:" },
                         { type: "image_url", image_url: { url: image } }
                     ]
                 });
