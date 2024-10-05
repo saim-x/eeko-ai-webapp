@@ -14,6 +14,9 @@ const AgriChatbot = ({ latitude, longitude, nasaData }) => {
     const [mode, setMode] = useState('text'); // 'text', 'camera', or 'upload'
     const [image, setImage] = useState(null);
     const fileInputRef = useRef(null);
+    const [isCameraOpen, setIsCameraOpen] = useState(false);
+    const videoRef = useRef(null);
+    const canvasRef = useRef(null);
 
     useEffect(() => {
         chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -29,6 +32,13 @@ const AgriChatbot = ({ latitude, longitude, nasaData }) => {
         }, 2000); // Change tag every 2 seconds
 
         return () => clearInterval(interval);
+    }, []);
+
+    useEffect(() => {
+        return () => {
+            // Cleanup function to ensure camera is always stopped when component unmounts
+            stopCamera();
+        };
     }, []);
 
     const fetchLocationInfo = async () => {
@@ -133,25 +143,50 @@ const AgriChatbot = ({ latitude, longitude, nasaData }) => {
         }
     };
 
-    const handleCameraCapture = async () => {
+    const startCamera = async () => {
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-            const videoElement = document.createElement('video');
-            videoElement.srcObject = stream;
-            await videoElement.play();
-
-            const canvas = document.createElement('canvas');
-            canvas.width = videoElement.videoWidth;
-            canvas.height = videoElement.videoHeight;
-            canvas.getContext('2d').drawImage(videoElement, 0, 0);
-
-            const imageDataUrl = canvas.toDataURL('image/jpeg');
-            setImage(imageDataUrl);
-            setMode('camera');
-
-            stream.getTracks().forEach(track => track.stop());
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                if (videoRef.current) {
+                    videoRef.current.srcObject = stream;
+                    await videoRef.current.play();
+                }
+                setIsCameraOpen(true);
+            } else {
+                console.error('getUserMedia is not supported');
+            }
         } catch (error) {
             console.error('Error accessing camera:', error);
+        }
+    };
+
+    const stopCamera = () => {
+        if (videoRef.current && videoRef.current.srcObject) {
+            const tracks = videoRef.current.srcObject.getTracks();
+            tracks.forEach(track => track.stop());
+            videoRef.current.srcObject = null;
+        }
+        setIsCameraOpen(false);
+    };
+
+    const handleCameraCapture = async () => {
+        if (isCameraOpen) {
+            captureImage();
+        } else {
+            await startCamera();
+        }
+    };
+
+    const captureImage = () => {
+        if (videoRef.current && canvasRef.current) {
+            const context = canvasRef.current.getContext('2d');
+            canvasRef.current.width = videoRef.current.videoWidth;
+            canvasRef.current.height = videoRef.current.videoHeight;
+            context.drawImage(videoRef.current, 0, 0, canvasRef.current.width, canvasRef.current.height);
+            const imageDataUrl = canvasRef.current.toDataURL('image/jpeg');
+            setImage(imageDataUrl);
+            stopCamera();
+            setMode('upload');
         }
     };
 
@@ -162,6 +197,7 @@ const AgriChatbot = ({ latitude, longitude, nasaData }) => {
             reader.onloadend = () => {
                 setImage(reader.result);
                 setMode('upload');
+                stopCamera(); // Ensure camera is stopped when uploading an image
             };
             reader.readAsDataURL(file);
         }
@@ -218,13 +254,13 @@ const AgriChatbot = ({ latitude, longitude, nasaData }) => {
                 <div ref={chatEndRef} />
             </div>
             <div className="mb-2 flex justify-center space-x-2">
-                <button onClick={() => setMode('text')} className={`p-2 rounded ${mode === 'text' ? 'bg-blue-600' : 'bg-gray-700'}`}>
+                <button onClick={() => { setMode('text'); stopCamera(); }} className={`p-2 rounded ${mode === 'text' ? 'bg-blue-600' : 'bg-gray-700'}`}>
                     <FaPaperPlane />
                 </button>
-                <button onClick={handleCameraCapture} className={`p-2 rounded ${mode === 'camera' ? 'bg-blue-600' : 'bg-gray-700'}`}>
+                <button onClick={handleCameraCapture} className={`p-2 rounded ${isCameraOpen ? 'bg-blue-600' : 'bg-gray-700'}`}>
                     <FaCamera />
                 </button>
-                <button onClick={() => fileInputRef.current.click()} className={`p-2 rounded ${mode === 'upload' ? 'bg-blue-600' : 'bg-gray-700'}`}>
+                <button onClick={() => { fileInputRef.current.click(); stopCamera(); }} className={`p-2 rounded ${mode === 'upload' ? 'bg-blue-600' : 'bg-gray-700'}`}>
                     <FaUpload />
                 </button>
                 <input
@@ -235,11 +271,23 @@ const AgriChatbot = ({ latitude, longitude, nasaData }) => {
                     style={{ display: 'none' }}
                 />
             </div>
+            {isCameraOpen && (
+                <div className="relative mb-2">
+                    <video ref={videoRef} className="w-full" autoPlay playsInline />
+                    <button 
+                        onClick={captureImage} 
+                        className="absolute bottom-2 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white px-4 py-2 rounded"
+                    >
+                        Capture
+                    </button>
+                </div>
+            )}
             {image && (
                 <div className="mb-2">
                     <img src={image} alt="Captured or uploaded image" className="max-w-full h-auto" />
                 </div>
             )}
+            <canvas ref={canvasRef} style={{ display: 'none' }} />
             <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row">
                 {mode === 'text' && (
                     <div className="flex-grow mb-2 sm:mb-0 sm:mr-2">
