@@ -4,7 +4,6 @@ import { motion } from "framer-motion";
 import { FaLocationArrow, FaCalendarAlt, FaSearch, FaGlobeAfrica, FaTemperatureHigh, FaSun, FaCheckCircle, FaSnowflake, FaCloudRain, FaCloudSunRain, FaWater, FaWind, FaTint, FaCloudSun } from "react-icons/fa";
 import { Inter } from 'next/font/google';
 import { FaSatellite } from 'react-icons/fa';
-import AgriChatbot from '../components/AgriChatbot';
 import Header from '../components/Header';
 const inter = Inter({ subsets: ['latin'] });
 
