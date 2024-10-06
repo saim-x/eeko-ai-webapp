@@ -1,10 +1,12 @@
 'use client';
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { FaLocationArrow, FaCalendarAlt, FaSearch, FaGlobeAfrica, FaTemperatureHigh, FaSun, FaCheckCircle, FaSnowflake, FaCloudRain, FaCloudSunRain, FaWater, FaWind, FaTint, FaCloudSun } from "react-icons/fa";
+import { FaLocationArrow, FaCalendarAlt, FaSearch, FaGlobeAfrica, FaTemperatureHigh, FaSun, FaCheckCircle, FaSnowflake, FaCloudRain, FaCloudSunRain, FaWater, FaWind, FaTint, FaCloudSun, FaVolumeUp } from "react-icons/fa";
 import { Inter } from 'next/font/google';
 import { FaSatellite } from 'react-icons/fa';
 import Header from '../components/Header';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faGithub } from '@fortawesome/free-brands-svg-icons';
 const inter = Inter({ subsets: ['latin'] });
 
 const presetLocations = [
@@ -30,6 +32,20 @@ export default function NasaData() {
     const [currentLocation, setCurrentLocation] = useState(null);
     const [locationLoading, setLocationLoading] = useState(false);
     const [locationError, setLocationError] = useState(null);
+
+    const [isPlaying, setIsPlaying] = useState(false);
+    const audioRef = useRef(null);
+
+    const playAudio = () => {
+        if (audioRef.current) {
+            if (isPlaying) {
+                audioRef.current.pause();
+            } else {
+                audioRef.current.play();
+            }
+            setIsPlaying(!isPlaying);
+        }
+    };
 
     useEffect(() => {
         if (currentLocation) {
@@ -308,21 +324,45 @@ export default function NasaData() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
-                className="max-w-4xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden" // Removed mt-24
+                className="max-w-4xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden"
             >
                 <div className="p-6 sm:p-10 bg-gradient-to-br from-blue-50 to-green-50">
                     <div className="flex items-center justify-between mb-8">
                         <h1 className="text-3xl sm:text-4xl font-bold text-gray-800">NASA Weather Data Explorer</h1>
-                        <motion.button
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            onClick={() => window.location.reload()}
-                            className="text-blue-600 hover:text-blue-800 transition-colors duration-300"
-                            aria-label="Refresh page"
-                        >
-                            <FaSatellite className="text-4xl" />
-                        </motion.button>
+                        <div className="flex items-center">
+                            <motion.button
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                onClick={playAudio}
+                                className="mr-4 bg-blue-500 text-white px-3 py-2 rounded-lg hover:bg-blue-600 transition-colors duration-300 flex items-center"
+                                aria-label="Read out loud"
+                            >
+                                <FaVolumeUp className="mr-2" />
+                                {isPlaying ? 'Pause' : 'Read out loud'} 
+                            </motion.button>
+                            <a href="https://github.com/saim-x/eeko-ai-webapp" target="_blank" rel="noopener noreferrer" className="mr-2">
+                                <motion.button
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    className="bg-gray-800 text-white px-3 py-2 rounded-lg hover:bg-gray-700 transition-colors duration-300 flex items-center"
+                                >
+                                    <FontAwesomeIcon icon={faGithub} className="mr-2" />
+                                    Frontend
+                                </motion.button>
+                            </a>
+                            <a href="https://github.com/mohibahmedbleedai/agri-backend" target="_blank" rel="noopener noreferrer">
+                                <motion.button
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    className="bg-gray-800 text-white px-3 py-2 rounded-lg hover:bg-gray-700 transition-colors duration-300 flex items-center"
+                                >
+                                    <FontAwesomeIcon icon={faGithub} className="mr-2" />
+                                    Backend
+                                </motion.button>
+                            </a>
+                        </div>
                     </div>
+                    <audio ref={audioRef} src="/insights.wav" />
                     <form onSubmit={fetchData} className="space-y-6">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                             <div>
