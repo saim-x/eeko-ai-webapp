@@ -39,6 +39,8 @@ export default function NasaData() {
             if (isPlaying) {
                 audioRef.current.pause();
             } else {
+                audioRef.current.playbackRate = 0.8; // Decrease pitch
+                audioRef.current.detune = -1000; // Lower pitch by 200 cents (2 semitones)
                 audioRef.current.play();
             }
             setIsPlaying(!isPlaying);
@@ -325,20 +327,20 @@ export default function NasaData() {
                 className="max-w-4xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden"
             >
                 <div className="p-6 sm:p-10 bg-gradient-to-br from-blue-50 to-green-50">
-                    <div className="flex items-center justify-between mb-8">
-                        <h1 className="text-3xl sm:text-4xl font-bold text-gray-800">NASA Weather Data Explorer</h1>
-                        <div className="flex items-center">
+                    <div className="flex flex-col sm:flex-row items-center justify-between mb-8">
+                        <h1 className="text-3xl sm:text-4xl font-bold text-gray-800 mb-4 sm:mb-0">NASA Weather Data Explorer</h1>
+                        <div className="flex flex-wrap items-center justify-center sm:justify-end gap-2">
                             <motion.button
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
                                 onClick={playAudio}
-                                className="mr-4 bg-blue-500 text-white px-3 py-2 rounded-lg hover:bg-blue-600 transition-colors duration-300 flex items-center"
+                                className="bg-blue-500 text-white px-3 py-2 rounded-lg hover:bg-blue-600 transition-colors duration-300 flex items-center"
                                 aria-label="Read out loud"
                             >
                                 <FaVolumeUp className="mr-2" />
-                                {isPlaying ? 'Pause' : 'Read out loud'}
+                                {isPlaying ? 'Pause' : 'Read'}
                             </motion.button>
-                            <a href="https://github.com/saim-x/eeko-ai-webapp" target="_blank" rel="noopener noreferrer" className="mr-2">
+                            <a href="https://github.com/saim-x/eeko-ai-webapp" target="_blank" rel="noopener noreferrer">
                                 <motion.button
                                     whileHover={{ scale: 1.05 }}
                                     whileTap={{ scale: 0.95 }}
