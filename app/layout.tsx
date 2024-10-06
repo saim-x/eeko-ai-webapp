@@ -1,6 +1,7 @@
 import React from 'react'; // {{ edit_1 }}
 import Header from './components/Header'
 import './globals.css'
+import { Analytics } from "@vercel/analytics/react"
 
 export default function RootLayout({
   children,
@@ -14,6 +15,7 @@ export default function RootLayout({
           <main className="flex-grow pt-16 sm:pt-20"> {/* Increased padding-top */}
             {children}
           </main>
+          <Analytics />
         </body>
       </html>
   )
