@@ -1,4 +1,4 @@
-import { ClerkProvider } from '@clerk/nextjs'
+import React from 'react'; // {{ edit_1 }}
 import Header from './components/Header'
 import './globals.css'
 
@@ -8,7 +8,6 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <ClerkProvider>
       <html lang="en">
         <body className="flex flex-col min-h-screen">
           <Header />
@@ -17,6 +16,5 @@ export default function RootLayout({
           </main>
         </body>
       </html>
-    </ClerkProvider>
   )
 }
