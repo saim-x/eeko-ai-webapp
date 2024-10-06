@@ -1,18 +1,18 @@
-'use client'
-import { useUser } from '@clerk/nextjs';
-import LandingPage from "./components/LandingPage";
-import AuthenticatedHome from "./components/AuthenticatedHome";
+'use client';
+import { useState } from 'react';
+import LandingPage from './components/LandingPage';
+import AuthenticatedHome from './components/AuthenticatedHome';
 
 export default function Home() {
-  const { isLoaded, isSignedIn, user } = useUser();
+  const [showAuthenticatedHome, setShowAuthenticatedHome] = useState(false);
 
-  if (!isLoaded) {
-    return <div>Loading...</div>;
+  const handleExploreClick = () => {
+    setShowAuthenticatedHome(true);
+  };
+
+  if (showAuthenticatedHome) {
+    return <AuthenticatedHome />;
   }
 
-  return (
-    <main className="min-h-screen">
-      {isSignedIn ? <AuthenticatedHome user={user} /> : <LandingPage />}
-    </main>
-  );
+  return <LandingPage onExploreClick={handleExploreClick} />;
 }

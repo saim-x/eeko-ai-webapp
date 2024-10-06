@@ -29,7 +29,11 @@ import {
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-export default function LandingPage() {
+interface LandingPageProps {
+    onExploreClick: () => void;
+}
+
+export default function LandingPage({ onExploreClick }: LandingPageProps) {
     const [formData, setFormData] = useState({
         name: "",
         email: "",
@@ -74,7 +78,7 @@ export default function LandingPage() {
                                 <p className="max-w-[600px] text-gray-500 md:text-xl dark:text-gray-400">
                                     EekoAI: A hackathon project revolutionizing agriculture with Deep Learning, Computer Vision, Machine Learning, and AI.
                                 </p>
-                                <Button size="lg" className="mt-4 hover:bg-gray-700" onClick={() => router.push('/ChatBot')}>Explore EekoAI</Button>
+                                <Button size="lg" className="mt-4 hover:bg-gray-700" onClick={onExploreClick}>Explore EekoAI</Button>
                             </div>
                             <div className="lg:w-1/2">
                                 <video

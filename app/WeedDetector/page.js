@@ -1,5 +1,5 @@
 'use client'
-import { useState } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Upload, Image as ImageIcon, Video, Info, Leaf, Camera, Sun, FileVideo, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,26 +15,88 @@ import Header from "../components/Header";
 
 export default function WeedDetector() {
   const [file, setFile] = useState(null);
-  const [fileType, setFileType] = useState(null);
+  const [isValidImage, setIsValidImage] = useState(false);
   const [result, setResult] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [analysis, setAnalysis] = useState(null);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  useEffect(() => {
+    if (errorMessage) {
+      const timer = setTimeout(() => {
+        setErrorMessage("");
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [errorMessage]);
 
   const handleFileChange = (event) => {
     const selectedFile = event.target.files?.[0];
     if (selectedFile) {
       setFile(selectedFile);
-      setFileType(selectedFile.type.startsWith("image") ? "image" : "video");
+      const isImage = selectedFile.type.startsWith("image");
+      setIsValidImage(isImage);
+      if (!isImage) {
+        setErrorMessage("Please select an image file.");
+      } else {
+        setErrorMessage("");
+      }
       setResult(null);
     }
   };
 
-  const handleSubmit = async (event) => {
+  const handleSubmit = useCallback(async (event) => {
     event.preventDefault();
     if (!file) return;
 
-    // Simulating API call for weed detection
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    setResult("Weed detected in the bottom-left quadrant of your field. (Simulation hai, dummy)");
-  };
+    setIsLoading(true);
+    setResult(null);
+    setAnalysis(null);
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const response = await fetch('http://127.0.0.1:8000/detect/', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const blob = await response.blob();
+      const imageUrl = URL.createObjectURL(blob);
+      setResult(imageUrl);
+
+      // Convert blob to base64
+      const reader = new FileReader();
+      reader.readAsDataURL(blob);
+      reader.onloadend = async () => {
+        const base64data = reader.result;
+        
+        // Send base64 image to new weed detection API
+        const analysisResponse = await fetch('/api/detect-weed', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ image: base64data }),
+        });
+
+        if (!analysisResponse.ok) {
+          throw new Error(`HTTP error! status: ${analysisResponse.status}`);
+        }
+
+        const analysisData = await analysisResponse.json();
+        setAnalysis(analysisData.content);
+      };
+    } catch (error) {
+      console.error("Error:", error);
+      setResult("An error occurred while processing your request. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [file]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-50 to-blue-50 dark:from-gray-900 dark:to-gray-800">
@@ -55,22 +117,21 @@ export default function WeedDetector() {
             <CardHeader className="bg-green-500 text-white">
               <CardTitle className="flex items-center text-2xl">
                 <Upload className="mr-2 h-6 w-6" />
-                Upload Field Media
+                Upload Field Image
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6">
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid w-full items-center gap-2">
-                  <Label htmlFor="field-media" className="text-lg font-semibold">Choose Image or Video</Label>
+                  <Label htmlFor="field-media" className="text-lg font-semibold">Choose Image</Label>
                   <div className="flex items-center space-x-2">
                     <Camera className="text-green-500 dark:text-green-400" />
-                    <FileVideo className="text-green-500 dark:text-green-400" />
                   </div>
                   <div className="relative">
                     <Input
                       id="field-media"
                       type="file"
-                      accept="image/*,video/*"
+                      accept="image/*"
                       onChange={handleFileChange}
                       className="hidden"
                     />
@@ -81,7 +142,7 @@ export default function WeedDetector() {
                       <div className="text-center">
                         <Upload className="mx-auto h-8 w-8 text-green-500 dark:text-green-400 mb-2" />
                         <span className="text-sm text-gray-600 dark:text-gray-300">
-                          {file ? file.name : "Click or drag file to upload"}
+                          {file ? (isValidImage ? file.name : "Please select an image file") : "Click or drag image to upload"}
                         </span>
                       </div>
                     </label>
@@ -90,10 +151,15 @@ export default function WeedDetector() {
                 <Button 
                   className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 rounded-lg transition duration-300" 
                   type="submit" 
-                  disabled={!file}
+                  disabled={!isValidImage || isLoading}
                 >
-                  {file ? 'Detect Weeds' : 'Select a file to begin'}
+                  {isLoading ? 'Processing...' : isValidImage ? 'Detect Weeds' : 'Select an image to begin'}
                 </Button>
+                {errorMessage && (
+                  <div className="text-red-500 text-sm mt-2 animate-fade-in-out">
+                    {errorMessage}
+                  </div>
+                )}
               </form>
             </CardContent>
           </Card>
@@ -101,37 +167,27 @@ export default function WeedDetector() {
           <Card className="shadow-xl bg-white dark:bg-gray-800 rounded-lg overflow-hidden">
             <CardHeader className="bg-blue-500 text-white">
               <CardTitle className="flex items-center text-2xl">
-                {fileType === "image" ? <ImageIcon className="mr-2 h-6 w-6" /> : <Video className="mr-2 h-6 w-6" />}
+                <ImageIcon className="mr-2 h-6 w-6" />
                 Preview and Results
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6">
-              {file && (
+              {file && isValidImage && (
                 <div className="mb-6 border-2 border-blue-200 dark:border-blue-700 rounded-lg overflow-hidden">
-                  {fileType === "image" ? (
-                    <img
-                      src={URL.createObjectURL(file)}
-                      alt="Field preview"
-                      className="w-full h-auto"
-                    />
-                  ) : (
-                    <video
-                      src={URL.createObjectURL(file)}
-                      controls
-                      className="w-full h-auto"
-                    >
-                      Your browser does not support the video tag.
-                    </video>
-                  )}
+                  <img
+                    src={result || URL.createObjectURL(file)}
+                    alt="Field preview"
+                    className="w-full h-auto"
+                  />
                 </div>
               )}
-              {result && (
+              {analysis && (
                 <div className="p-4 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded-lg shadow">
                   <h3 className="font-semibold mb-2 flex items-center text-lg">
                     <AlertTriangle className="mr-2 h-5 w-5" />
                     Detection Results:
                   </h3>
-                  <p>{result}</p>
+                  <p>{analysis}</p>
                 </div>
               )}
               {!file && !result && (
@@ -155,8 +211,8 @@ export default function WeedDetector() {
             <ul className="space-y-3 text-gray-700 dark:text-gray-300">
               <li className="flex items-center"><Sun className="mr-2 h-5 w-5 text-yellow-500" /> Ensure your image or video is clear and well-lit</li>
               <li className="flex items-center"><Camera className="mr-2 h-5 w-5 text-blue-500" /> Try to capture a good overview of your field</li>
-              <li className="flex items-center"><Video className="mr-2 h-5 w-5 text-red-500" /> If using video, pan slowly across the area of concern</li>
-              <li className="flex items-center"><Sun className="mr-2 h-5 w-5 text-orange-500" /> For best results, take photos or videos during daylight hours</li>
+              
+              <li className="flex items-center"><Sun className="mr-2 h-5 w-5 text-orange-500" /> For best results, take photos  during daylight hours</li>
               <li className="flex items-center"><AlertTriangle className="mr-2 h-5 w-5 text-purple-500" /> Make sure the file size is under 50MB for faster processing</li>
             </ul>
           </CardContent>

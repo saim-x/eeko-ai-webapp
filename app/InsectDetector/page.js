@@ -1,16 +1,12 @@
 'use client'
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { FaCamera, FaUpload, FaBug } from 'react-icons/fa';
 import ReactMarkdown from 'react-markdown';
 import Header from '../components/Header';
-import { useRouter } from 'next/navigation';
-import { useUser } from '@clerk/nextjs';
 import { Button } from '@/components/ui/button';
 
 const InsectDetector = () => {
-    const router = useRouter();
-    const { isLoaded, isSignedIn, user } = useUser();
     const [messages, setMessages] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
     const chatEndRef = useRef(null);
@@ -20,16 +16,6 @@ const InsectDetector = () => {
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
     const streamRef = useRef(null);
-
-    useEffect(() => {
-        if (isLoaded && !isSignedIn) {
-            router.push('/sign-in');
-        }
-    }, [isLoaded, isSignedIn, router]);
-
-    useEffect(() => {
-        chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [messages]);
 
     const handleSubmit = async () => {
         if (!image) return;
@@ -133,10 +119,6 @@ const InsectDetector = () => {
         }
         return <p>Unsupported message content</p>;
     };
-
-    if (!isLoaded || !isSignedIn) {
-        return null; // or a loading spinner
-    }
 
     return (
         <div className="bg-gradient-to-br from-green-50 to-blue-50 min-h-screen flex flex-col">

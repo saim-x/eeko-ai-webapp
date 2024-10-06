@@ -1,11 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-import { UserResource } from '@clerk/types';
-import { Leaf, Droplet, MessageSquare, Bug, Satellite } from 'lucide-react';
-
-interface AuthenticatedHomeProps {
-  user: UserResource | null;
-}
+import { Leaf, MessageSquare, Satellite, Bug } from 'lucide-react';
 
 const FeatureCard: React.FC<{ title: string; description: string; icon: React.ReactNode; href: string }> = ({ title, description, icon, href }) => (
   <Link href={href} className="block">
@@ -17,7 +12,7 @@ const FeatureCard: React.FC<{ title: string; description: string; icon: React.Re
   </Link>
 );
 
-const AuthenticatedHome: React.FC<AuthenticatedHomeProps> = ({ user }) => {
+const AuthenticatedHome: React.FC = () => {
   const features = [
     { title: 'Weed Detector', description: 'Identify and manage weeds in your crops', icon: <Leaf size={24} />, href: '/WeedDetector' },
     { title: 'ChatBot', description: 'Get instant answers to your farming questions', icon: <MessageSquare size={24} />, href: '/ChatBot' },
@@ -30,12 +25,13 @@ const AuthenticatedHome: React.FC<AuthenticatedHomeProps> = ({ user }) => {
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
-            Welcome, {user?.firstName || 'User'}!
+            Welcome to EekoAI!
           </h1>
           <p className="text-xl text-gray-600 dark:text-gray-300">
             Explore our AI-powered tools to enhance your farming practices
           </p>
         </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {features.map((feature) => (
             <FeatureCard key={feature.title} {...feature} />

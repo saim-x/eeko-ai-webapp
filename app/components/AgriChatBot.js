@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaPaperPlane, FaRobot, FaTag, FaCamera, FaUpload } from 'react-icons/fa';
+import { FaPaperPlane, FaRobot, FaTag, FaCamera, FaUpload, FaWater } from 'react-icons/fa';
 import ReactMarkdown from 'react-markdown';
 import { Groq } from "groq-sdk";
 
@@ -17,6 +17,7 @@ const AgriChatbot = ({ latitude, longitude, nasaData }) => {
     const [isCameraOpen, setIsCameraOpen] = useState(false);
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
+    const [waterStressLevel, setWaterStressLevel] = useState(null);
 
     useEffect(() => {
         chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -40,6 +41,10 @@ const AgriChatbot = ({ latitude, longitude, nasaData }) => {
             stopCamera();
         };
     }, []);
+
+    useEffect(() => {
+        calculateWaterStress();
+    }, [nasaData]);
 
     const fetchLocationInfo = async () => {
         try {
@@ -221,6 +226,23 @@ const AgriChatbot = ({ latitude, longitude, nasaData }) => {
         "Climate change adaptation"
     ];
 
+    const calculateWaterStress = () => {
+        if (nasaData && nasaData.PRECTOTCORR && nasaData.T2M) {
+            const avgPrecipitation = Object.values(nasaData.PRECTOTCORR).reduce((sum, val) => sum + val, 0) / Object.values(nasaData.PRECTOTCORR).length;
+            const avgTemperature = Object.values(nasaData.T2M).reduce((sum, val) => sum + val, 0) / Object.values(nasaData.T2M).length;
+            
+            // Simple water stress calculation (you can make this more sophisticated)
+            const stressLevel = (avgTemperature / 10) - (avgPrecipitation * 2);
+            setWaterStressLevel(Math.max(0, Math.min(10, stressLevel))); // Clamp between 0 and 10
+        }
+    };
+
+    const getWaterStressColor = (level) => {
+        if (level <= 3) return 'bg-green-500';
+        if (level <= 6) return 'bg-yellow-500';
+        return 'bg-red-500';
+    };
+
     const renderMessageContent = (content) => {
         if (typeof content === 'string') {
             return <ReactMarkdown>{content}</ReactMarkdown>;
@@ -237,6 +259,23 @@ const AgriChatbot = ({ latitude, longitude, nasaData }) => {
     return (
         <div className="bg-gray-800 rounded-lg p-2 sm:p-4 w-full h-full flex flex-col">
             <h2 className="text-lg sm:text-xl font-bold mb-2 sm:mb-4 text-gray-100">Agricultural Assistant</h2>
+            {/* Water Stress Indicator */}
+            {waterStressLevel !== null && (
+                <div className="mb-4 p-2 bg-gray-700 rounded-lg">
+                    <h3 className="text-white mb-2 flex items-center">
+                        <FaWater className="mr-2" /> Water Stress Level
+                    </h3>
+                    <div className="w-full bg-gray-600 rounded-full h-2.5">
+                        <div 
+                            className={`h-2.5 rounded-full ${getWaterStressColor(waterStressLevel)}`} 
+                            style={{width: `${waterStressLevel * 10}%`}}
+                        ></div>
+                    </div>
+                    <p className="text-white mt-1">
+                        {waterStressLevel <= 3 ? 'Low' : waterStressLevel <= 6 ? 'Moderate' : 'High'} water stress
+                    </p>
+                </div>
+            )}
             <div className="flex-grow overflow-y-auto mb-2 sm:mb-4">
                 {messages.map((message, index) => (
                     <motion.div

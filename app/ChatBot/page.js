@@ -1,38 +1,54 @@
 'use client';
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { FaPaperPlane, FaCamera, FaUpload, FaMapMarkerAlt, FaSatellite, FaRobot } from 'react-icons/fa';
+import { FaPaperPlane, FaMapMarkerAlt, FaSatellite, FaRobot, FaWater } from 'react-icons/fa';
 import ReactMarkdown from 'react-markdown';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import Image from 'next/image';
 import { Inter } from 'next/font/google';
 import { format, subDays } from 'date-fns';
 import Header from '../components/Header';
 
 const inter = Inter({ subsets: ['latin'] });
 
-const AgriChatbot = () => {
+const ChatBotPage = () => {
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const [mode, setMode] = useState('text');
-    const [image, setImage] = useState(null);
     const [latitude, setLatitude] = useState('');
     const [longitude, setLongitude] = useState('');
     const chatEndRef = useRef(null);
-    const fileInputRef = useRef(null);
     const [nasaData, setNasaData] = useState(null);
     const [showNasaData, setShowNasaData] = useState(false);
+    const [waterStressLevel, setWaterStressLevel] = useState(null);
+    const [location, setLocation] = useState('');
+
+    // Predefined locations
+    const predefinedLocations = [
+        { name: "Gojra (Punjab)", lat: "31.1497", lon: "72.6871" },
+        { name: "Sehwan (Sindh)", lat: "26.4249", lon: "67.8613" },
+        { name: "Charsadda (KPK)", lat: "34.1484", lon: "71.7415" },
+        { name: "Khuzdar (Balochistan)", lat: "27.8120", lon: "66.6101" },
+        { name: "Skardu (Gilgit-Baltistan)", lat: "35.2895", lon: "75.6350" }
+    ];
 
     useEffect(() => {
         chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
 
+    useEffect(() => {
+        handleGetCurrentLocation();
+    }, []);
+
+    useEffect(() => {
+        if (nasaData) {
+            calculateWaterStress();
+        }
+    }, [nasaData]);
+
     const fetchNasaData = async () => {
         if (!latitude || !longitude) return null;
         const endDate = format(new Date(), 'yyyyMMdd');
-        // 12 days bhi chal jae ga but 10 for safe side if user prompt is big
         const startDate = format(subDays(new Date(), 10), 'yyyyMMdd');
 
         try {
@@ -40,6 +56,7 @@ const AgriChatbot = () => {
                 `https://power.larc.nasa.gov/api/temporal/hourly/point?start=${startDate}&end=${endDate}&latitude=${latitude}&longitude=${longitude}&community=re&parameters=T2M,PRECTOTCORR,WS2M,RH2M,ALLSKY_SFC_SW_DWN&format=json&user=demo&header=true`
             );
             const result = await res.json();
+            setNasaData(result);
             return result;
         } catch (err) {
             console.error("Error fetching NASA data:", err);
@@ -47,39 +64,62 @@ const AgriChatbot = () => {
         }
     };
 
+    const calculateWaterStress = () => {
+        if (nasaData && nasaData.properties && nasaData.properties.parameter) {
+            const { T2M, PRECTOTCORR } = nasaData.properties.parameter;
+            const avgTemperature = Object.values(T2M).reduce((sum, val) => sum + val, 0) / Object.values(T2M).length;
+            const avgPrecipitation = Object.values(PRECTOTCORR).reduce((sum, val) => sum + val, 0) / Object.values(PRECTOTCORR).length;
+            
+            const stressLevel = ((avgTemperature - 273.15) / 10) - (avgPrecipitation * 2);
+            setWaterStressLevel(Math.max(0, Math.min(10, stressLevel)));
+        }
+    };
+
+    const getWaterStressColor = (level) => {
+        if (level <= 3) return 'bg-green-500';
+        if (level <= 6) return 'bg-yellow-500';
+        return 'bg-red-500';
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if ((!input.trim() && mode === 'text') || (!image && (mode === 'camera' || mode === 'upload'))) return;
+        if (!input.trim()) return;
 
         setIsLoading(true);
 
-        const fetchedNasaData = await fetchNasaData();
-
-        let userMessage = {
+        const userMessage = {
             role: 'user',
-            content: mode === 'text' ? input : { image: image }
+            content: input
         };
 
         setMessages(prev => [...prev, userMessage]);
         setInput('');
 
+        const fetchedNasaData = await fetchNasaData();
+        
+        if (waterStressLevel === null && fetchedNasaData) {
+            calculateWaterStress();
+        }
+
         try {
+            const waterStressInfo = waterStressLevel !== null ? `
+Current Water Stress Level: ${waterStressLevel.toFixed(2)} (${waterStressLevel <= 3 ? 'Low' : waterStressLevel <= 6 ? 'Moderate' : 'High'})
+` : '';
+
             const response = await fetch('/api/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    messages: [...messages, {
-                        role: 'user',
-                        content: `
-User query: ${userMessage.content}
-
-NASA POWER Data for the location:
-${JSON.stringify(fetchedNasaData)}
-
-Please analyze the NASA POWER data provided above and use it to inform your response to the user's query. Consider how the weather conditions might affect agricultural practices or crop growth in the area.
-`
-                    }],
-                    mode,
+                    messages: [
+                        {
+                            role: 'system',
+                            content: `You are an AI assistant specializing in agriculture. The user is located at: ${location} (Coordinates: ${latitude}°N, ${longitude}°E). ${waterStressInfo}
+NASA POWER Data for the location: ${JSON.stringify(fetchedNasaData)}
+Please consider this information when answering the user's query.`
+                        },
+                        ...messages,
+                        userMessage
+                    ],
                 }),
             });
 
@@ -92,41 +132,6 @@ Please analyze the NASA POWER data provided above and use it to inform your resp
             setMessages(prev => [...prev, { role: 'assistant', content: "I'm sorry, I encountered an error. Please try again later." }]);
         } finally {
             setIsLoading(false);
-            setImage(null);
-            setMode('text');
-        }
-    };
-
-    const handleCameraCapture = async () => {
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-            const videoElement = document.createElement('video');
-            videoElement.srcObject = stream;
-            await videoElement.play();
-
-            const canvas = document.createElement('canvas');
-            canvas.width = videoElement.videoWidth;
-            canvas.height = videoElement.videoHeight;
-            canvas.getContext('2d').drawImage(videoElement, 0, 0);
-
-            setImage(canvas.toDataURL('image/jpeg'));
-            setMode('camera');
-
-            stream.getTracks().forEach(track => track.stop());
-        } catch (error) {
-            console.error('Error accessing camera:', error);
-        }
-    };
-
-    const handleImageUpload = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setImage(reader.result);
-                setMode('upload');
-            };
-            reader.readAsDataURL(file);
         }
     };
 
@@ -136,12 +141,21 @@ Please analyze the NASA POWER data provided above and use it to inform your resp
                 (position) => {
                     setLatitude(position.coords.latitude.toFixed(6));
                     setLongitude(position.coords.longitude.toFixed(6));
+                    setLocation('Current Location');
+                    fetchNasaData();
                 },
                 (error) => console.error("Error getting location:", error)
             );
         } else {
             console.error("Geolocation is not supported by this browser.");
         }
+    };
+
+    const handleLocationSelect = (loc) => {
+        setLatitude(loc.lat);
+        setLongitude(loc.lon);
+        setLocation(loc.name);
+        fetchNasaData();
     };
 
     const renderMessageContent = (content) => {
@@ -162,8 +176,6 @@ Please analyze the NASA POWER data provided above and use it to inform your resp
                     {content}
                 </ReactMarkdown>
             );
-        } else if (content && typeof content === 'object' && content.image) {
-            return <img src={content.image} alt="User uploaded" className="max-w-full h-auto rounded-lg" />;
         }
         return <p>Unsupported message content</p>;
     };
@@ -205,6 +217,43 @@ Please analyze the NASA POWER data provided above and use it to inform your resp
         );
     };
 
+    const renderWaterStressIndicator = () => {
+        if (waterStressLevel === null) return null;
+        
+        let stressDescription, precautions;
+        if (waterStressLevel <= 3) {
+            stressDescription = "Low water stress indicates favorable conditions for most crops.";
+            precautions = "Monitor soil moisture and maintain regular irrigation schedules.";
+        } else if (waterStressLevel <= 6) {
+            stressDescription = "Moderate water stress may impact sensitive crops and reduce yields.";
+            precautions = "Increase irrigation frequency, consider mulching, and prioritize water-efficient practices.";
+        } else {
+            stressDescription = "High water stress can severely affect crop health and yield.";
+            precautions = "Implement drought-resistant strategies, consider crop selection changes, and optimize water usage.";
+        }
+
+        return (
+            <div className="mb-6 p-4 bg-white rounded-2xl shadow-xl">
+                <h3 className="text-lg font-semibold text-gray-800 mb-2 flex items-center">
+                    <FaWater className="mr-2 text-blue-500" /> Water Stress Level
+                </h3>
+                <div className="w-full bg-gray-200 rounded-full h-2.5 mb-2">
+                    <div 
+                        className={`h-2.5 rounded-full ${getWaterStressColor(waterStressLevel)}`} 
+                        style={{width: `${waterStressLevel * 10}%`}}
+                    ></div>
+                </div>
+                <p className="text-gray-600 font-semibold mb-2">
+                    {waterStressLevel <= 3 ? 'Low' : waterStressLevel <= 6 ? 'Moderate' : 'High'} water stress
+                </p>
+                <div className="text-sm text-gray-600">
+                    <p className="mb-2"><strong>Significance:</strong> {stressDescription}</p>
+                    <p><strong>Precautions:</strong> {precautions}</p>
+                </div>
+            </div>
+        );
+    };
+
     return (
         <div className={`${inter.className} bg-gradient-to-br from-green-50 to-blue-50 min-h-screen flex flex-col`}>
             <Header />
@@ -216,6 +265,8 @@ Please analyze the NASA POWER data provided above and use it to inform your resp
                     <p className="text-gray-600">Your AI-powered agricultural companion. Ask questions, get insights, and make data-driven decisions for your farm.</p>
                 </div>
                 
+                {renderWaterStressIndicator()}
+
                 <div className="flex-grow overflow-y-auto mb-6 space-y-6 scrollbar-thin scrollbar-thumb-green-400 scrollbar-track-gray-200 pr-2 sm:pr-4 bg-white rounded-2xl shadow-xl p-6">
                     {messages.map((message, index) => (
                         <motion.div
@@ -237,6 +288,13 @@ Please analyze the NASA POWER data provided above and use it to inform your resp
                     <div className="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-4">
                         <Input
                             type="text"
+                            value={location}
+                            onChange={(e) => setLocation(e.target.value)}
+                            placeholder="Enter location"
+                            className="w-full sm:flex-grow bg-gray-100 text-gray-900 placeholder-gray-500 border-gray-300"
+                        />
+                        <Input
+                            type="text"
                             value={latitude}
                             onChange={(e) => setLatitude(e.target.value)}
                             placeholder="Latitude"
@@ -251,40 +309,21 @@ Please analyze the NASA POWER data provided above and use it to inform your resp
                         />
                         <Button onClick={handleGetCurrentLocation} variant="secondary" className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white">
                             <FaMapMarkerAlt className="mr-2" />
-                            Get Location
+                            Get Current Location
                         </Button>
                     </div>
 
-                    <div className="flex flex-wrap justify-center gap-2 mt-4">
-                        {[
-                            { name: "Gojra (Punjab)", lat: "31.582045", lon: "74.329376" },
-                            { name: "Sehwan (Sindh)", lat: "24.860966", lon: "67.001137" },
-                            { name: "Charsadda (KPK)", lat: "34.008053", lon: "71.578640" },
-                            { name: "Khuzdar (Balochistan)", lat: "28.394857", lon: "66.261768" },
-                            { name: "Skardu (Gilgit-Baltistan)", lat: "35.350659", lon: "74.857989" }
-                        ].map((location) => (
-                            <Button 
-                                key={location.name}
-                                onClick={() => { setLatitude(location.lat); setLongitude(location.lon); }} 
+                    <div className="flex flex-wrap justify-center gap-2">
+                        {predefinedLocations.map((loc) => (
+                            <Button
+                                key={loc.name}
+                                onClick={() => handleLocationSelect(loc)}
                                 className="bg-blue-100 hover:bg-blue-200 text-blue-800 text-xs sm:text-sm py-1 px-2 rounded-full"
                             >
-                                {location.name}
+                                {loc.name}
                             </Button>
                         ))}
                     </div>
-
-                    {image && (
-                        <div className="mt-4 sm:mt-6">
-                            <Image
-                                src={image}
-                                alt="Captured or uploaded image"
-                                width={500}
-                                height={300}
-                                layout="responsive"
-                                className="rounded-xl shadow-lg"
-                            />
-                        </div>
-                    )}
 
                     <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-4">
                         <Input
@@ -315,4 +354,4 @@ Please analyze the NASA POWER data provided above and use it to inform your resp
     );
 };
 
-export default AgriChatbot;
+export default ChatBotPage;

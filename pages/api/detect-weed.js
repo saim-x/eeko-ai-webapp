@@ -1,6 +1,6 @@
 import Groq from 'groq-sdk';
 
-const GROQ_API_KEY = process.env.GROQ_API_KEY;
+const GROQ_API_KEY = process.env.NEXT_PUBLIC_GROQ_API_KEY;
 
 export default async function handler(req, res) {
     if (req.method === 'POST') {
@@ -22,19 +22,18 @@ export default async function handler(req, res) {
 
             const base64Image = image.replace(/^data:image\/\w+;base64,/, '');
 
-            const analysisMessages = [
+            const messages = [
                 {
                     role: "user",
                     content: [
-                        { type: "text", text: "Analyze this image and provide insights. If the image is related to agriculture, focus on:" },
-                        { type: "text", text: "1) Crop types visible\n2) Plant growth stages\n3) Signs of pest damage or disease\n4) Overall crop health\n5) Soil condition (if visible)\n6) Irrigation systems or farming equipment\n7) Estimated field size and crop density\n8) Recommendations for improving yield or health\n\nIf the image is not related to agriculture, provide a general description of what you see in the image. Be concise and focus only on what's clearly visible." },
+                        { type: "text", text: "You are an expert in weed detection for agricultural fields. Analyze the following image and provide a concise response: just tell which weeds are detected and if no weed is detected reply with no weed detected , your response SHOULD be in 3 lines and your reply should be based on the squares shown on the image , if there are no squares then no weed is detected" },
                         { type: "image_url", image_url: { url: `data:image/jpeg;base64,${base64Image}` } }
                     ]
                 }
             ];
 
-            const analysisCompletion = await groq.chat.completions.create({
-                messages: analysisMessages,
+            const chatCompletion = await groq.chat.completions.create({
+                messages: messages,
                 model: "llama-3.2-11b-vision-preview",
                 temperature: 0.5,
                 max_tokens: 8192,
@@ -43,14 +42,14 @@ export default async function handler(req, res) {
                 stop: null
             });
 
-            const responseContent = analysisCompletion.choices[0]?.message?.content || '';
+            const responseContent = chatCompletion.choices[0]?.message?.content || '';
             return res.status(200).json({ 
                 role: 'assistant', 
                 content: responseContent
             });
 
         } catch (error) {
-            console.error("Error in image analysis API:", error);
+            console.error("Error in weed detection API:", error);
             return res.status(500).json({ error: "An error occurred while processing your request." });
         }
     } else {
