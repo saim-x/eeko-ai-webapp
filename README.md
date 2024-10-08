@@ -34,3 +34,8 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+# Contribution: <br>
+## Ahsen Tahir : 
+Explored complex data from the website and found the power API data for LLM integration. Additionally, I reviewed research papers for implementation and initially tried Roboflow's weed detection model. When it didn’t work, I switched to fine-tuning YOLOv5 with Mohib's help for UI integration using FastAPI.
+
